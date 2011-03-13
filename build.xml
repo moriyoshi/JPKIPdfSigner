@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="JPKIPdfSigner" default="build">
+  <!--
+    - properties
+    -->
+  <!-- core properties -->
+  <tstamp>
+    <format property="build.timestamp" pattern="yyyyMMdd-HHmmss" />
+  </tstamp>
+  <property name="copyright" value="2011 (C) Moriyoshi Koizumi" />
+
+  <!-- top level components -->
+  <property name="src.dir" location="${basedir}/src" />
+  <property name="src.java.dir" location="${src.dir}/java" />
+  <property name="conf.dir" location="${basedir}/conf" />
+  <property name="bin.dir" location="${basedir}/bin" />
+  <property name="lib.dir" location="${basedir}/lib" />
+  <property name="build.dir" location="${basedir}/build" />
+  <property name="component.properties" location="${basedir}/component.properties" />
+
+  <!-- src -->
+  <property name="src.encoding" value="Windows-31J" />
+
+  <!-- conf -->
+  <property name="conf.test.dir" location="${basedir}/conf/test" />
+
+  <!-- dist -->
+  <property name="dist.encoding" value="UTF-8" />
+  <property name="dist.dir" location="${basedir}/dist" />
+  <property name="dist.version" value="${build.timestamp}" />
+  <property name="dist.prefix" value="${ant.project.name}-${dist.version}" />
+  <property name="dist.src.name" value="${dist.prefix}-src" />
+  <property name="dist.src.java.dir" location = "${dist.dir}/src-${build.timestamp}" />
+  <!-- javadoc -->
+  <property name="javadoc.encoding" value = "UTF-8" />
+  <property name="javadoc.html-charset" value = "UTF-8" />
+  <property name="javadoc.locale" value = "ja_JP" />
+
+  <!-- lib -->
+  <property file="${component.properties}" />
+
+  <!-- System tools -->
+  <available property="lib.jdk.tools"
+             file="${java.home}/../Classes/classes.jar"
+             value="${java.home}/../Classes/classes.jar" />
+  <available property="lib.jdk.tools"
+             file="${java.home}/lib/tools.jar"
+             value="${java.home}/lib/tools.jar" />
+
+  <!-- build -->
+  <property name="build.dir" location="${build.dir}/classes" />
+  <property name="build.product.jar" location="${build.dir}/jpkipdfsigner.jar" />
+  <property name="build.classes.dir" location="${build.dir}/classes" />
+  <property name="build.src.java.dir" location="${build.dir}/src" />
+  <property name="build.javadoc.dir" location="${build.dir}/javadoc" />
+
+  <path id="build.classpath">
+    <pathelement path="${lib.itextpdf}" />
+    <pathelement path="${lib.bcmail}" />
+    <pathelement path="${lib.bcprov}" />
+    <pathelement path="${lib.bctsp}" />
+  </path>
+
+  <!-- test -->
+  <path id="test.classpath">
+    <pathelement path="${lib.itextpdf}" />
+    <pathelement path="${lib.bcmail}" />
+    <pathelement path="${lib.bcprov}" />
+    <pathelement path="${lib.bctsp}" />
+  </path>
+
+  <!--
+  - TARGETS
+  -->
+
+  <!-- clean -->
+  <target name="clean" depends="build.clean, dist.clean" />
+
+  <!-- build -->
+  <target name="build.clean" depends="compile.clean">
+    <delete dir="${build.dir}" />
+    <delete dir="${build.dir}" />
+  </target>
+
+  <target name="build.prepare">
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.classes.dir}" />
+  </target>
+
+  <target name="build" depends="compile, native2ascii">
+    <jar destfile="${build.product.jar}">
+      <fileset dir="${build.classes.dir}">
+        <include name="**/*" />
+      </fileset>
+    </jar>
+  </target>
+
+  <!-- native2ascii -->
+
+  <target name="native2ascii.prepare">
+    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.classes.dir}" />
+    <copy todir="${build.src.java.dir}">
+      <fileset dir="${src.java.dir}">
+        <include name="**/*.properties" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="native2ascii" depends="native2ascii.prepare">
+    <native2ascii encoding="${src.encoding}"
+                  src="${build.src.java.dir}"
+                  dest="${build.classes.dir}">
+      <include name="**/*.properties" />
+    </native2ascii>
+  </target>
+
+  <!-- compile -->
+  <target name="compile.clean">
+    <delete dir="${build.src.java.dir}" />
+    <delete dir="${build.classes.dir}" />
+  </target>
+
+  <target name="compile.prepare" depends="build.prepare">
+    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.classes.dir}" />
+    <copy todir="${build.src.java.dir}">
+      <fileset dir="${src.java.dir}">
+        <include name="**/*.java" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="compile" depends="compile.prepare">
+    <javac destdir="${build.classes.dir}"
+           encoding="${src.encoding}" debug="true" deprecation="true"
+           srcdir="${build.src.java.dir}" target="1.5" source="1.5">
+      <classpath refid="build.classpath" />
+    </javac>
+  </target>
+
+  <!-- doc -->
+  <target name="doc" depends="javadoc" />
+
+  <!-- javadoc -->
+  <target name="javadoc.clean">
+    <delete dir="${build.javadoc.dir}" />
+  </target>
+
+  <target name="javadoc.prepare">
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.javadoc.dir}" />
+
+    <copy todir="${build.src.java.dir}">
+      <fileset dir="${src.java.dir}">
+        <include name="**/*.java" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="javadoc" depends="javadoc.prepare">
+    <javadoc destdir="${build.javadoc.dir}"
+             classpathref="build.classpath"
+             locale="${javadoc.locale}"
+             docencoding="${javadoc.encoding}"
+             charset="${javadoc.html-charset}"
+             encoding="${src.encoding}"
+             additionalparam="-J-Dorg.apache.commons.attributes.javadoc.CATaglet.sources=${build.src.java.dir}">
+      <bottom>&lt;i&gt;${copyright}. All rights reserved.&lt;/i&gt;</bottom>
+      <tag name="todo" scope="all" description="To do:" />
+      <taglet name="org.apache.commons.attributes.javadoc.CATaglet"
+              path="${lib.commons-attributes.compiler}" />
+      <fileset dir="${build.src.java.dir}">
+        <include name="**/*.java" />
+      </fileset>
+      <link href="http://java.sun.com/j2se/1.4.2/docs/api/" />
+      <link href="http://java.sun.com/products/javamail/javadocs/" />
+      <link href="http://struts.apache.org/api/" />
+    </javadoc>
+  </target>
+
+  <!-- dist -->
+  <target name="dist.prepare">
+    <mkdir dir="${dist.dir}" />
+  </target>
+
+  <target name="dist.clean">
+    <delete>
+      <fileset dir="${basedir}">
+        <include name="*.war" />
+        <include name="*.jar" />
+        <include name="*.bz2" />
+        <include name="*.gz" />
+        <include name="*.zip" />
+      </fileset>
+    </delete>
+    <delete dir="${dist.dir}" />
+  </target>
+
+  <target name="dist" depends="dist.src" />
+
+  <target name="dist.src.prepare" depends="dist.prepare">
+    <mkdir dir="${dist.src.java.dir}" />
+    <mkdir dir="${dist.src.java.dir}/${dist.src.name}" />
+  </target>
+
+  <target name="dist.src.clean">
+    <delete dir="${dist.src.java.dir}" />
+  </target>
+
+  <target name="dist.src" depends="dist.src.prepare">
+    <copy todir="${dist.src.java.dir}/${dist.src.name}">
+      <fileset dir="${basedir}">
+        <include name="bin/**/*" />
+        <include name="conf/**/*" />
+        <include name="src/**/*" />
+        <include name="lib/**/*" />
+        <include name="examples/**/*" />
+        <include name="component.properties" />
+        <include name="build.xml" />
+        <exclude name="**/*~" />
+        <exclude name="**/*.bak" />
+        <exclude name="**/CVS" />
+        <exclude name="**/.cvsignore" />
+        <exclude name="**/.*" />
+      </fileset>
+    </copy>
+    <zip destfile="${basedir}/${dist.src.name}.zip" encoding="${dist.encoding}">
+      <fileset dir="${dist.src.java.dir}">
+        <include name="**/*" />
+      </fileset>
+    </zip>
+    <tar compression="gzip" destfile="${basedir}/${dist.src.name}.tar.gz">
+      <tarfileset dir="${dist.src.dir}">
+        <include name="**/*" />
+      </tarfileset>
+    </tar>
+  </target>
+
+</project>
+<!--
+vim600: sts=2 sw=2 ts=2 et
+-->
