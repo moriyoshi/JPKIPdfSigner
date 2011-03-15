@@ -45,6 +45,7 @@ package com.itextpdf.text.pdf;
 
 import java.io.ByteArrayOutputStream;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 import com.itextpdf.text.ExceptionConverter;
 import com.itextpdf.text.pdf.PdfName;
@@ -107,7 +108,13 @@ public abstract class JPKIPdfSigGenericPKCS extends PdfSignature implements java
                 }
                 else
                     setContents(_pkcs.getEncodedPKCS7());
-                name = JPKIPdfPKCS7.getSubjectFields(_pkcs.getSigningCertificate()).getField("CN");
+
+                final X509Certificate cert = _pkcs.getSigningCertificate();
+                if (cert instanceof JPKIUserCertificate) {
+                    name = ((JPKIUserCertificate)cert).getBasicData().getName();
+                } else {
+                    name = JPKIPdfPKCS7.getSubjectFields(cert).getField("CN");
+                }
                 if (name != null)
                     put(PdfName.NAME, new PdfString(name, PdfObject.TEXT_UNICODE));
             } finally {
