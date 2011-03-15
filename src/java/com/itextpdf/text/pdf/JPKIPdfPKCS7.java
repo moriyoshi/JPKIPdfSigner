@@ -47,8 +47,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SignatureException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -88,6 +90,8 @@ public class JPKIPdfPKCS7 implements java.io.Closeable {
     private byte[] digest;
     private int version = 1;
     private int signerversion = 1;
+    private byte[] RSAdata;
+    private MessageDigest messageDigest;
     private JPKISignature sig;
 
     private static final String ID_PKCS7_DATA = "1.2.840.113549.1.7.1";
@@ -133,12 +137,16 @@ public class JPKIPdfPKCS7 implements java.io.Closeable {
      * Generates a signature.
      * @param jpki the JPKIWrapper
      */
-    public JPKIPdfPKCS7(JPKIWrapper jpki) throws JPKIWrapperException
+    public JPKIPdfPKCS7(JPKIWrapper jpki, boolean hasRSAdata) throws JPKIWrapperException, NoSuchAlgorithmException
     {
-    	this.signCert = jpki.getCertificate();
-    	this.certs = new X509Certificate[] { this.signCert, jpki.getUserKey().getCertificate() };
-    	this.signCerts = new X509Certificate[] { this.signCert };
+        this.signCert = jpki.getUserKey().getCertificate();
+    	this.certs = new X509Certificate[] { jpki.getCertificate(), this.signCert };
+    	this.signCerts = new X509Certificate[] { jpki.getCertificate(), this.signCert };
     	this.sig = jpki.createSignature();
+        if (hasRSAdata) {
+            this.RSAdata = new byte[] { 0 };
+            this.messageDigest = MessageDigest.getInstance("SHA1");
+        }
     }
 
     /**
@@ -149,7 +157,10 @@ public class JPKIPdfPKCS7 implements java.io.Closeable {
      * @throws SignatureException on error
      */
     public void update(byte[] buf, int off, int len) throws SignatureException {
-        sig.update(buf, off, len);
+        if (RSAdata != null)
+            messageDigest.update(buf, off, len);
+        else
+            sig.update(buf, off, len);
     }
 
     /**
@@ -282,6 +293,10 @@ public class JPKIPdfPKCS7 implements java.io.Closeable {
      */
     public byte[] getEncodedPKCS7() {
     	try {
+            if (RSAdata != null) {
+                RSAdata = messageDigest.digest();
+                sig.update(RSAdata);
+            }
             digest = sig.sign();
 
             // Create the set of Hash algorithms
@@ -294,6 +309,8 @@ public class JPKIPdfPKCS7 implements java.io.Closeable {
             // Create the contentInfo.
             ASN1EncodableVector v = new ASN1EncodableVector();
             v.add(new DERObjectIdentifier(ID_PKCS7_DATA));
+            if (RSAdata != null)
+                v.add(new DERTaggedObject(0, new DEROctetString(RSAdata)));
             DERSequence contentinfo = new DERSequence(v);
 
             // Get all the certificates

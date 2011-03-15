@@ -103,6 +103,14 @@ public class JPKISignature extends Signature implements Closeable {
         }
     }
 
+    public byte[] digest() throws SignatureException {
+        try {
+            return JPKIWrapper.impl.cryptGetHashValue(handle);
+        } catch (JPKICryptJNIException e) {
+            throw new SignatureException(e);
+        }
+    }
+
     JPKISignature(JPKIWrapper wrapper, int handle) {
         super("SHA1");
         this.wrapper = wrapper;

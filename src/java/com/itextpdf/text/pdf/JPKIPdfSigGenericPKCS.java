@@ -92,7 +92,8 @@ public abstract class JPKIPdfSigGenericPKCS extends PdfSignature implements java
      */    
     public void setJPKIWrapper(JPKIWrapper jpki)  {
         try {
-            JPKIPdfPKCS7 _pkcs = new JPKIPdfPKCS7(jpki);
+            boolean hasRSAdata = PdfName.ADBE_PKCS7_SHA1.equals(get(PdfName.SUBFILTER));
+            JPKIPdfPKCS7 _pkcs = new JPKIPdfPKCS7(jpki, hasRSAdata);
             try {
                 Certificate[] certChain = _pkcs.getSignCertificateChain();
                 if (PdfName.ADBE_X509_RSA_SHA1.equals(get(PdfName.SUBFILTER))) {
@@ -112,7 +113,7 @@ public abstract class JPKIPdfSigGenericPKCS extends PdfSignature implements java
             } finally {
                 _pkcs.close();
             }
-            this.pkcs = new JPKIPdfPKCS7(jpki);
+            this.pkcs = new JPKIPdfPKCS7(jpki, hasRSAdata);
         }
         catch (Exception e) {
             throw ExceptionConverter.convertException(e);
