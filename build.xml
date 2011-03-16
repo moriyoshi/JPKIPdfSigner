@@ -61,6 +61,11 @@
     <pathelement path="${lib.bctsp}" />
   </path>
 
+  <path id="build.gui.classpath">
+    <filelist refid="build.classpath" />
+    <pathelement path="${lib.swt}" />
+  </path>
+
   <!-- test -->
   <path id="test.classpath">
     <pathelement path="${lib.itextpdf}" />
@@ -86,6 +91,14 @@
     <mkdir dir="${build.dir}" />
     <mkdir dir="${build.src.java.dir}" />
     <mkdir dir="${build.classes.dir}" />
+  </target>
+
+  <target name="build.gui" depends="compile.gui, native2ascii">
+    <jar destfile="${build.product.jar}">
+      <fileset dir="${build.classes.dir}">
+        <include name="**/*" />
+      </fileset>
+    </jar>
   </target>
 
   <target name="build" depends="compile, native2ascii">
@@ -137,6 +150,17 @@
            encoding="${src.encoding}" debug="true" deprecation="true"
            srcdir="${build.src.java.dir}" target="1.5" source="1.5">
       <classpath refid="build.classpath" />
+      <include name="**/*.java" />
+      <exclude name="**/JPKIPdfSignerGUI.java" />
+    </javac>
+  </target>
+
+  <target name="compile.gui" depends="compile.prepare">
+    <javac destdir="${build.classes.dir}"
+           encoding="${src.encoding}" debug="true" deprecation="true"
+           srcdir="${build.src.java.dir}" target="1.5" source="1.5">
+      <classpath refid="build.gui.classpath" />
+      <include name="**/*.java" />
     </javac>
   </target>
 
