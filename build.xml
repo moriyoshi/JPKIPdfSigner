@@ -7,12 +7,19 @@
   <tstamp>
     <format property="build.timestamp" pattern="yyyyMMdd-HHmmss" />
   </tstamp>
+  <property name="project.name" value="${ant.project.name}" />
+  <property name="project.displayname" value="JPKI PDF Signer" />
+  <property name="project.version" value="1.0" />
+  <property name="project.gui.mainclass" value="jp.opencollector.application.jpkipdf.JPKIPdfSignerGUI" />
   <property name="copyright" value="2011 (C) Moriyoshi Koizumi" />
 
   <!-- top level components -->
   <property name="src.dir" location="${basedir}/src" />
-  <property name="src.java.dir" location="${src.dir}/java" />
-  <property name="conf.dir" location="${basedir}/conf" />
+  <property name="src.main.dir" location="${src.dir}/main" />
+  <property name="src.main.java.dir" location="${src.main.dir}/java" />
+  <property name="src.main.resources.dir" location="${src.main.dir}/resources" />
+  <property name="src.main.conf.dir" location="${src.main.dir}/conf" />
+  <property name="conf.dir" location="${src.main.conf.dir}" />
   <property name="bin.dir" location="${basedir}/bin" />
   <property name="lib.dir" location="${basedir}/lib" />
   <property name="build.dir" location="${basedir}/build" />
@@ -27,10 +34,14 @@
   <!-- dist -->
   <property name="dist.encoding" value="UTF-8" />
   <property name="dist.dir" location="${basedir}/dist" />
-  <property name="dist.version" value="${build.timestamp}" />
-  <property name="dist.prefix" value="${ant.project.name}-${dist.version}" />
+  <property name="dist.prefix" value="${project.name}-${project.version}" />
+  <property name="dist.jar.name" value="jpkipdfsigner.jar" />
+  <property name="dist.gui.jar.name" value="jpkipdfsignergui.jar" />
   <property name="dist.src.name" value="${dist.prefix}-src" />
-  <property name="dist.src.java.dir" location = "${dist.dir}/src-${build.timestamp}" />
+  <property name="dist.src.dir" location = "${dist.dir}/src-${build.timestamp}" />
+  <property name="dist.bin.dir" location="${dist.dir}/bin-${build.timestamp}" />
+  <property name="dist.bin.mac.dir" location="${dist.bin.dir}/${project.displayname}.app" />
+
   <!-- javadoc -->
   <property name="javadoc.encoding" value = "UTF-8" />
   <property name="javadoc.html-charset" value = "UTF-8" />
@@ -48,11 +59,50 @@
              value="${java.home}/lib/tools.jar" />
 
   <!-- build -->
+  <condition property="build.os.mac">
+    <os family="mac" />
+  </condition>
+
+  <condition property="build.os.windows">
+    <os family="windows" />
+  </condition>
+
+  <condition property="build.os.linux">
+    <and>
+      <os family="unix" />
+      <equals arg1="${os.name}" arg2="linux" casesensitive="false" />
+    </and>
+  </condition>
+
+  <condition property="build.os" value="windows">
+    <isset property="build.os.windows" />
+  </condition>
+
+  <condition property="build.os" value="mac">
+    <isset property="build.os.mac" />
+  </condition>
+
+  <condition property="build.os" value="linux">
+    <isset property="build.os.linux" />
+  </condition>
+
+  <property name="build.arch" value="x86" />
   <property name="build.dir" location="${build.dir}/classes" />
-  <property name="build.product.jar" location="${build.dir}/jpkipdfsigner.jar" />
+  <property name="build.product.jar" location="${build.dir}/${dist.jar.name}" />
+  <property name="build.product.gui.jar" location="${build.dir}/${dist.gui.jar.name}" />
   <property name="build.classes.dir" location="${build.dir}/classes" />
-  <property name="build.src.java.dir" location="${build.dir}/src" />
+  <property name="build.src.main.java.dir" location="${build.dir}/src" />
   <property name="build.javadoc.dir" location="${build.dir}/javadoc" />
+
+  <macrodef name="define.lib.swt">
+    <attribute name="build.os" />
+    <attribute name="build.arch" />
+    <sequential>
+      <property name="lib.swt" value="${lib.swt.@{build.os}.@{build.arch}}" />
+    </sequential>
+  </macrodef>
+
+  <define.lib.swt build.os="${build.os}" build.arch="${build.arch}" />
 
   <path id="build.classpath">
     <pathelement path="${lib.itextpdf}" />
@@ -62,7 +112,7 @@
   </path>
 
   <path id="build.gui.classpath">
-    <filelist refid="build.classpath" />
+    <path refid="build.classpath" />
     <pathelement path="${lib.swt}" />
   </path>
 
@@ -89,15 +139,18 @@
 
   <target name="build.prepare">
     <mkdir dir="${build.dir}" />
-    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.src.main.java.dir}" />
     <mkdir dir="${build.classes.dir}" />
   </target>
 
   <target name="build.gui" depends="compile.gui, native2ascii">
-    <jar destfile="${build.product.jar}">
+    <jar destfile="${build.product.gui.jar}">
       <fileset dir="${build.classes.dir}">
         <include name="**/*" />
       </fileset>
+      <manifest>
+        <attribute name="Main-Class" value="${project.gui.mainclass}" />
+      </manifest>
     </jar>
   </target>
 
@@ -106,16 +159,19 @@
       <fileset dir="${build.classes.dir}">
         <include name="**/*" />
       </fileset>
+      <manifest>
+        <attribute name="Main-Class" value="jp.opencollector.application.jpkipdf.JPKIPdfSigner" />
+      </manifest>
     </jar>
   </target>
 
   <!-- native2ascii -->
 
   <target name="native2ascii.prepare">
-    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.src.main.java.dir}" />
     <mkdir dir="${build.classes.dir}" />
-    <copy todir="${build.src.java.dir}">
-      <fileset dir="${src.java.dir}">
+    <copy todir="${build.src.main.java.dir}">
+      <fileset dir="${src.main.java.dir}">
         <include name="**/*.properties" />
       </fileset>
     </copy>
@@ -123,7 +179,7 @@
 
   <target name="native2ascii" depends="native2ascii.prepare">
     <native2ascii encoding="${src.encoding}"
-                  src="${build.src.java.dir}"
+                  src="${build.src.main.java.dir}"
                   dest="${build.classes.dir}">
       <include name="**/*.properties" />
     </native2ascii>
@@ -131,15 +187,15 @@
 
   <!-- compile -->
   <target name="compile.clean">
-    <delete dir="${build.src.java.dir}" />
+    <delete dir="${build.src.main.java.dir}" />
     <delete dir="${build.classes.dir}" />
   </target>
 
   <target name="compile.prepare" depends="build.prepare">
-    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.src.main.java.dir}" />
     <mkdir dir="${build.classes.dir}" />
-    <copy todir="${build.src.java.dir}">
-      <fileset dir="${src.java.dir}">
+    <copy todir="${build.src.main.java.dir}">
+      <fileset dir="${src.main.java.dir}">
         <include name="**/*.java" />
       </fileset>
     </copy>
@@ -148,7 +204,8 @@
   <target name="compile" depends="compile.prepare">
     <javac destdir="${build.classes.dir}"
            encoding="${src.encoding}" debug="true" deprecation="true"
-           srcdir="${build.src.java.dir}" target="1.5" source="1.5">
+           srcdir="${build.src.main.java.dir}" target="1.5" source="1.5"
+           includeantruntime="false">
       <classpath refid="build.classpath" />
       <include name="**/*.java" />
       <exclude name="**/JPKIPdfSignerGUI.java" />
@@ -158,7 +215,8 @@
   <target name="compile.gui" depends="compile.prepare">
     <javac destdir="${build.classes.dir}"
            encoding="${src.encoding}" debug="true" deprecation="true"
-           srcdir="${build.src.java.dir}" target="1.5" source="1.5">
+           srcdir="${build.src.main.java.dir}" target="1.5" source="1.5"
+           includeantruntime="false">
       <classpath refid="build.gui.classpath" />
       <include name="**/*.java" />
     </javac>
@@ -174,11 +232,11 @@
 
   <target name="javadoc.prepare">
     <mkdir dir="${build.dir}" />
-    <mkdir dir="${build.src.java.dir}" />
+    <mkdir dir="${build.src.main.java.dir}" />
     <mkdir dir="${build.javadoc.dir}" />
 
-    <copy todir="${build.src.java.dir}">
-      <fileset dir="${src.java.dir}">
+    <copy todir="${build.src.main.java.dir}">
+      <fileset dir="${src.main.java.dir}">
         <include name="**/*.java" />
       </fileset>
     </copy>
@@ -191,12 +249,12 @@
              docencoding="${javadoc.encoding}"
              charset="${javadoc.html-charset}"
              encoding="${src.encoding}"
-             additionalparam="-J-Dorg.apache.commons.attributes.javadoc.CATaglet.sources=${build.src.java.dir}">
+             additionalparam="-J-Dorg.apache.commons.attributes.javadoc.CATaglet.sources=${build.src.main.java.dir}">
       <bottom>&lt;i&gt;${copyright}. All rights reserved.&lt;/i&gt;</bottom>
       <tag name="todo" scope="all" description="To do:" />
       <taglet name="org.apache.commons.attributes.javadoc.CATaglet"
               path="${lib.commons-attributes.compiler}" />
-      <fileset dir="${build.src.java.dir}">
+      <fileset dir="${build.src.main.java.dir}">
         <include name="**/*.java" />
       </fileset>
       <link href="http://java.sun.com/j2se/1.4.2/docs/api/" />
@@ -226,16 +284,16 @@
   <target name="dist" depends="dist.src" />
 
   <target name="dist.src.prepare" depends="dist.prepare">
-    <mkdir dir="${dist.src.java.dir}" />
-    <mkdir dir="${dist.src.java.dir}/${dist.src.name}" />
+    <mkdir dir="${dist.src.dir}" />
+    <mkdir dir="${dist.src.dir}/${dist.src.name}" />
   </target>
 
   <target name="dist.src.clean">
-    <delete dir="${dist.src.java.dir}" />
+    <delete dir="${dist.src.dir}" />
   </target>
 
   <target name="dist.src" depends="dist.src.prepare">
-    <copy todir="${dist.src.java.dir}/${dist.src.name}">
+    <copy todir="${dist.src.dir}/${dist.src.name}">
       <fileset dir="${basedir}">
         <include name="bin/**/*" />
         <include name="conf/**/*" />
@@ -252,7 +310,7 @@
       </fileset>
     </copy>
     <zip destfile="${basedir}/${dist.src.name}.zip" encoding="${dist.encoding}">
-      <fileset dir="${dist.src.java.dir}">
+      <fileset dir="${dist.src.dir}">
         <include name="**/*" />
       </fileset>
     </zip>
@@ -261,6 +319,79 @@
         <include name="**/*" />
       </tarfileset>
     </tar>
+  </target>
+
+  <target name="dist.bin">
+    <antcall target="dist.bin.${build.os}" />
+  </target>
+
+  <target name="dist.bin.mac.prepare" depends="build.gui,dist.prepare" if="build.os.mac">
+    <mkdir dir="${dist.bin.mac.dir}" />
+    <mkdir dir="${dist.bin.mac.dir}/Contents" />
+    <mkdir dir="${dist.bin.mac.dir}/Contents/Resources" />
+    <mkdir dir="${dist.bin.mac.dir}/Contents/Libraries/Java" />
+    <mkdir dir="${dist.bin.mac.dir}/Contents/MacOS" />
+  </target>
+
+  <target name="dist.bin.mac.clean">
+    <delete dir="${dist.bin.mac.dir}" />
+  </target>
+
+  <target name="dist.bin.mac" depends="dist.bin.mac.prepare">
+    <copy todir="${dist.bin.mac.dir}/Contents/Libraries/Java"
+          flatten="true">
+      <path refid="build.gui.classpath" />
+      <file file="${build.product.gui.jar}" />
+    </copy>
+    <copy file="${src.main.resources.dir}/${project.displayname}.icns"
+          todir="${dist.bin.mac.dir}/Contents/Resources"
+          failonerror="false" />
+    <echo file="${dist.bin.mac.dir}/Contents/Info.plist"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>CFBundleExecutable</key>
+    <string>${project.displayname}</string>
+    <key>CFBundleGetInfoString</key>
+    <string>${project.displayname} ${project.version} for Mac OS X</string>
+    <key>CFBundleIconFile</key>
+    <string>${project.displayname}.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>${project.gui.mainclass}</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>${project.displayname}</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>${project.version}</string>
+    <key>CFBundleSignature</key>
+    <string>?????</string>
+    <key>CFBundleVersion</key>
+    <string>118</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSSupportsSuddenTermination</key>
+    <string>NO</string>
+  </dict>
+</plist>
+]]></echo>
+    <echo file="${dist.bin.mac.dir}/Contents/MacOS/${project.displayname}"><![CDATA[#!/bin/sh
+basedir=`dirname "$0"`
+libdir="$basedir/../Libraries/Java"
+classpath="$basedir"
+pushd "$libdir"
+for file in *; do
+  classpath="$classpath:$libdir/$file"
+done
+popd
+exec java -d32 -XstartOnFirstThread \
+          -classpath "$classpath" \
+          ${project.gui.mainclass}
+]]></echo>
+    <chmod file="${dist.bin.mac.dir}/Contents/MacOS/${project.displayname}"
+           perm="ugo+rx" />
   </target>
 
 </project>
