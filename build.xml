@@ -40,7 +40,9 @@
   <property name="dist.src.name" value="${dist.prefix}-src" />
   <property name="dist.src.dir" location = "${dist.dir}/src-${build.timestamp}" />
   <property name="dist.bin.dir" location="${dist.dir}/bin-${build.timestamp}" />
-  <property name="dist.bin.mac.dir" location="${dist.bin.dir}/${project.displayname}.app" />
+  <property name="dist.bin.mac.dir" location="${dist.bin.dir}/mac" />
+  <property name="dist.bin.mac.bundle.dir" location="${dist.bin.mac.dir}/${project.displayname}.app" />
+  <property name="dist.bin.mac.dmg" location="${dist.bin.dir}/${project.name}-${project.version}.dmg" />
   <!--
   <property name="dist.bin.mac.args" value="-XstartOnFirstThread" />
   -->
@@ -335,28 +337,46 @@
     <antcall target="dist.bin.${build.os}" />
   </target>
 
-  <target name="dist.bin.mac.prepare" depends="build.gui,dist.prepare" if="build.os.mac">
+  <target name="dist.bin.mac.bundle.prepare" depends="dist.bin.mac.prepare" if="build.os.mac">
+    <mkdir dir="${dist.bin.mac.bundle.dir}" />
+    <mkdir dir="${dist.bin.mac.bundle.dir}/Contents" />
+    <mkdir dir="${dist.bin.mac.bundle.dir}/Contents/Resources" />
+    <mkdir dir="${dist.bin.mac.bundle.dir}/Contents/Libraries/Java" />
+    <mkdir dir="${dist.bin.mac.bundle.dir}/Contents/MacOS" />
+  </target>
+
+  <target name="dist.bin.mac.prepare" depends="dist.prepare">
     <mkdir dir="${dist.bin.mac.dir}" />
-    <mkdir dir="${dist.bin.mac.dir}/Contents" />
-    <mkdir dir="${dist.bin.mac.dir}/Contents/Resources" />
-    <mkdir dir="${dist.bin.mac.dir}/Contents/Libraries/Java" />
-    <mkdir dir="${dist.bin.mac.dir}/Contents/MacOS" />
   </target>
 
   <target name="dist.bin.mac.clean">
-    <delete dir="${dist.bin.mac.dir}" />
+    <delete dir="${dist.bin.mac.bundle.dir}" />
   </target>
 
-  <target name="dist.bin.mac" depends="dist.bin.mac.prepare">
-    <copy todir="${dist.bin.mac.dir}/Contents/Libraries/Java"
+  <target name="dist.bin.mac" depends="dist.bin.mac.bundle">
+    <exec executable="hdiutil">
+      <arg value="create" />
+      <arg value="-srcfolder" />
+      <arg value="${dist.bin.mac.bundle.dir}" />
+      <arg value="${dist.bin.mac.dmg}" />
+    </exec>
+    <exec executable="hdiutil">
+      <arg value="internet-enable" />
+      <arg value="-yes" />
+      <arg value="${dist.bin.mac.dmg}" />
+    </exec>
+  </target>
+
+  <target name="dist.bin.mac.bundle" depends="build.gui,dist.bin.mac.bundle.prepare">
+    <copy todir="${dist.bin.mac.bundle.dir}/Contents/Libraries/Java"
           flatten="true">
       <path refid="build.gui.classpath" />
       <file file="${build.product.gui.jar}" />
     </copy>
-    <copy file="${src.main.resources.dir}/${project.displayname}.icns"
-          todir="${dist.bin.mac.dir}/Contents/Resources"
+    <copy file="${src.main.resources.dir}/${project.name}.icns"
+          todir="${dist.bin.mac.bundle.dir}/Contents/Resources"
           failonerror="false" />
-    <echo file="${dist.bin.mac.dir}/Contents/Info.plist"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+    <echo file="${dist.bin.mac.bundle.dir}/Contents/Info.plist"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
@@ -365,7 +385,7 @@
     <key>CFBundleGetInfoString</key>
     <string>${project.displayname} ${project.version} for Mac OS X</string>
     <key>CFBundleIconFile</key>
-    <string>${project.displayname}.icns</string>
+    <string>${project.name}.icns</string>
     <key>CFBundleIdentifier</key>
     <string>${project.gui.mainclass}</string>
     <key>CFBundleInfoDictionaryVersion</key>
@@ -387,7 +407,7 @@
   </dict>
 </plist>
 ]]></echo>
-    <echo file="${dist.bin.mac.dir}/Contents/MacOS/${project.displayname}"><![CDATA[#!/bin/sh
+    <echo file="${dist.bin.mac.bundle.dir}/Contents/MacOS/${project.displayname}"><![CDATA[#!/bin/sh
 basedir=`dirname "$0"`
 libdir="$basedir/../Libraries/Java"
 classpath="$basedir"
@@ -400,7 +420,7 @@ exec java -d32 ${dist.bin.mac.args} \
           -classpath "$classpath" \
           ${project.gui.mainclass}
 ]]></echo>
-    <chmod file="${dist.bin.mac.dir}/Contents/MacOS/${project.displayname}"
+    <chmod file="${dist.bin.mac.bundle.dir}/Contents/MacOS/${project.displayname}"
            perm="ugo+rx" />
   </target>
 
