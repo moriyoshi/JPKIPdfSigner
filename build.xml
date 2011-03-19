@@ -10,7 +10,7 @@
   <property name="project.name" value="${ant.project.name}" />
   <property name="project.displayname" value="JPKI PDF Signer" />
   <property name="project.version" value="1.0" />
-  <property name="project.gui.mainclass" value="jp.opencollector.application.jpkipdf.JPKIPdfSignerGUI" />
+  <property name="project.gui.mainclass" value="jp.opencollector.application.jpkipdf.JPKIPdfSignerSwingGUI" />
   <property name="copyright" value="2011 (C) Moriyoshi Koizumi" />
 
   <!-- top level components -->
@@ -41,6 +41,10 @@
   <property name="dist.src.dir" location = "${dist.dir}/src-${build.timestamp}" />
   <property name="dist.bin.dir" location="${dist.dir}/bin-${build.timestamp}" />
   <property name="dist.bin.mac.dir" location="${dist.bin.dir}/${project.displayname}.app" />
+  <!--
+  <property name="dist.bin.mac.args" value="-XstartOnFirstThread" />
+  -->
+  <property name="dist.bin.mac.args" value="" />
 
   <!-- javadoc -->
   <property name="javadoc.encoding" value = "UTF-8" />
@@ -102,7 +106,7 @@
     </sequential>
   </macrodef>
 
-  <define.lib.swt build.os="${build.os}" build.arch="${build.arch}" />
+  <!-- <define.lib.swt build.os="${build.os}" build.arch="${build.arch}" /> -->
 
   <path id="build.classpath">
     <pathelement path="${lib.itextpdf}" />
@@ -113,7 +117,7 @@
 
   <path id="build.gui.classpath">
     <path refid="build.classpath" />
-    <pathelement path="${lib.swt}" />
+    <!-- <pathelement path="${lib.swt}" /> -->
   </path>
 
   <!-- test -->
@@ -202,6 +206,7 @@
     <copy todir="${build.src.main.java.dir}" filtering="true">
       <fileset dir="${src.main.java.dir}">
         <include name="**/*.java" />
+        <exclude name="**/JPKIPdfSignerSWTGUI.java" />
       </fileset>
     </copy>
   </target>
@@ -213,7 +218,7 @@
            includeantruntime="false">
       <classpath refid="build.classpath" />
       <include name="**/*.java" />
-      <exclude name="**/JPKIPdfSignerGUI.java" />
+      <exclude name="**/JPKIPdfSigner*GUI.java" />
     </javac>
   </target>
 
@@ -391,7 +396,7 @@ for file in *; do
   classpath="$classpath:$libdir/$file"
 done
 popd
-exec java -d32 -XstartOnFirstThread \
+exec java -d32 ${dist.bin.mac.args} \
           -classpath "$classpath" \
           ${project.gui.mainclass}
 ]]></echo>

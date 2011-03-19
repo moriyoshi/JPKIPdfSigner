@@ -70,7 +70,7 @@ import com.itextpdf.text.pdf.JPKIWrapperException;
 import com.itextpdf.text.pdf.PdfReader;
 
 
-public class JPKIPdfSignerGUI {
+public class JPKIPdfSignerSWTGUI {
     public static final String APP_VERSION = "@APP_VERSION@";
     private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("jp.opencollector.application.jpkipdf.messages"); //$NON-NLS-1$
     private static final String[] EXTENSIONS = { "pdf" };
@@ -85,7 +85,7 @@ public class JPKIPdfSignerGUI {
      */
     public static void main(String[] args) {
         try {
-            JPKIPdfSignerGUI window = new JPKIPdfSignerGUI();
+            JPKIPdfSignerSWTGUI window = new JPKIPdfSignerSWTGUI();
             window.open();
         } catch (Exception e) {
             e.printStackTrace();
@@ -286,14 +286,14 @@ public class JPKIPdfSignerGUI {
             }
         });
         btnSignIt.setText(BUNDLE.getString("JPKIPdfSignerGUI.btnSignIt.text"));
-        Button btnCancel = new Button(composite, SWT.NONE);
-        btnCancel.addSelectionListener(new SelectionAdapter() {
+        Button btnClose = new Button(composite, SWT.NONE);
+        btnClose.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent ev) {
                 shlJpkiPdfSigner.close();
             }
         });
-        btnCancel.setText(BUNDLE.getString("JPKIPdfSignerGUI.btnCancel.text"));
+        btnClose.setText(BUNDLE.getString("JPKIPdfSignerGUI.btnClose.text")); //$NON-NLS-1$
 
         new Composite(sashForm, SWT.NONE);
 
