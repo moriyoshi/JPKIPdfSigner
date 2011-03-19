@@ -35,8 +35,8 @@
   <property name="dist.encoding" value="UTF-8" />
   <property name="dist.dir" location="${basedir}/dist" />
   <property name="dist.prefix" value="${project.name}-${project.version}" />
-  <property name="dist.jar.name" value="jpkipdfsigner.jar" />
-  <property name="dist.gui.jar.name" value="jpkipdfsignergui.jar" />
+  <property name="dist.jar.name" value="jpkipdfsigner-${project.version}.jar" />
+  <property name="dist.gui.jar.name" value="jpkipdfsignergui-${project.version}.jar" />
   <property name="dist.src.name" value="${dist.prefix}-src" />
   <property name="dist.src.dir" location = "${dist.dir}/src-${build.timestamp}" />
   <property name="dist.bin.dir" location="${dist.dir}/bin-${build.timestamp}" />
@@ -47,6 +47,10 @@
   <property name="dist.bin.mac.args" value="-XstartOnFirstThread" />
   -->
   <property name="dist.bin.mac.args" value="" />
+  <property name="dist.bin.windows.zip" location="${dist.bin.dir}/${project.name}-bin-windows-${project.version}.zip" />
+  <property name="dist.bin.windows.launch4j.config" location="${dist.bin.dir}/launch4j.xml" />
+  <property name="dist.bin.windows.dir" location="${dist.bin.dir}/windows" />
+  <property name="dist.bin.windows.exe" location="${dist.bin.windows.dir}/${project.name}.exe" />
 
   <!-- javadoc -->
   <property name="javadoc.encoding" value = "UTF-8" />
@@ -337,6 +341,10 @@
     <antcall target="dist.bin.${build.os}" />
   </target>
 
+  <target name="dist.bin.prepare" depends="dist.prepare">
+    <mkdir dir="${dist.bin.dir}" />
+  </target>
+
   <target name="dist.bin.mac.bundle.prepare" depends="dist.bin.mac.prepare" if="build.os.mac">
     <mkdir dir="${dist.bin.mac.bundle.dir}" />
     <mkdir dir="${dist.bin.mac.bundle.dir}/Contents" />
@@ -345,8 +353,12 @@
     <mkdir dir="${dist.bin.mac.bundle.dir}/Contents/MacOS" />
   </target>
 
-  <target name="dist.bin.mac.prepare" depends="dist.prepare">
+  <target name="dist.bin.mac.prepare" depends="dist.bin.prepare">
     <mkdir dir="${dist.bin.mac.dir}" />
+  </target>
+
+  <target name="dist.bin.windows.prepare" depends="dist.bin.prepare">
+    <mkdir dir="${dist.bin.windows.dir}" />
   </target>
 
   <target name="dist.bin.mac.clean">
@@ -424,6 +436,54 @@ exec java -d32 ${dist.bin.mac.args} \
            perm="ugo+rx" />
   </target>
 
+  <target name="dist.bin.windows" depends="build.gui,dist.bin.windows.prepare">
+    <taskdef name="launch4j"
+             classname="net.sf.launch4j.ant.Launch4jTask"
+             classpath="${launch4j.dir}/launch4j.jar:${launch4j.dir}/lib/xstream.jar" />
+    <copy todir="${dist.bin.windows.dir}"
+          flatten="true">
+      <path refid="build.gui.classpath" />
+      <file file="${build.product.gui.jar}" />
+    </copy>
+    <basename property="lib.itextpdf.name" file="${lib.itextpdf}" />
+    <basename property="lib.bcmail.name"   file="${lib.bcmail}" />
+    <basename property="lib.bcprov.name"   file="${lib.bcprov}" />
+    <basename property="lib.bctsp.name"    file="${lib.bctsp}" />
+
+    <echo file="${dist.bin.windows.launch4j.config}"><![CDATA[<?xml version="1.0" encoding="UTF-8" ?>
+<launch4jConfig>
+  <headerType>gui</headerType>
+  <outfile>${dist.bin.windows.exe}</outfile>
+  <dontWrapJar>true</dontWrapJar>
+  <versionInfo>
+    <fileVersion>${project.version}.0.0</fileVersion>
+    <txtFileVersion>${project.displayname} ${project.version}</txtFileVersion>
+    <fileDescription>${project.displayname}</fileDescription>
+    <copyright>${copyright}</copyright>
+    <productName>${project.displayname}</productName>
+    <productVersion>${project.version}.0.0</productVersion>
+    <txtProductVersion>${project.displayname} ${project.version}</txtProductVersion>
+    <internalName>${project.name}</internalName>
+    <originalFilename>${project.name}-${project.version}.exe</originalFilename>
+  </versionInfo>
+  <classPath>
+    <mainClass>${project.gui.mainclass}</mainClass>
+    <cp>${dist.gui.jar.name}</cp>
+    <cp>${lib.itextpdf.name}</cp>
+    <cp>${lib.bcmail.name}</cp>
+    <cp>${lib.bcprov.name}</cp>
+    <cp>${lib.bctsp.name}</cp>
+  </classPath>
+  <jre>
+    <minVersion>1.5.0</minVersion>
+    <jdkPreference>preferJre</jdkPreference>
+  </jre>
+</launch4jConfig>]]></echo>
+    <launch4j configFile="${dist.bin.windows.launch4j.config}" />
+    <zip destfile="${dist.bin.windows.zip}">
+      <zipfileset dir="${dist.bin.windows.dir}" prefix="${project.name}-${project.version}" />
+    </zip>
+  </target>
 </project>
 <!--
 vim600: sts=2 sw=2 ts=2 et
