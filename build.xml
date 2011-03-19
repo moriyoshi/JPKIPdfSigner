@@ -125,6 +125,11 @@
   </path>
 
   <!--
+  - FILTERS
+  -->
+  <filter token="APP_VERSION" value="${project.version}" />
+
+  <!--
   - TARGETS
   -->
 
@@ -170,7 +175,7 @@
   <target name="native2ascii.prepare">
     <mkdir dir="${build.src.main.java.dir}" />
     <mkdir dir="${build.classes.dir}" />
-    <copy todir="${build.src.main.java.dir}">
+    <copy todir="${build.src.main.java.dir}" filtering="true">
       <fileset dir="${src.main.java.dir}">
         <include name="**/*.properties" />
       </fileset>
@@ -194,7 +199,7 @@
   <target name="compile.prepare" depends="build.prepare">
     <mkdir dir="${build.src.main.java.dir}" />
     <mkdir dir="${build.classes.dir}" />
-    <copy todir="${build.src.main.java.dir}">
+    <copy todir="${build.src.main.java.dir}" filtering="true">
       <fileset dir="${src.main.java.dir}">
         <include name="**/*.java" />
       </fileset>

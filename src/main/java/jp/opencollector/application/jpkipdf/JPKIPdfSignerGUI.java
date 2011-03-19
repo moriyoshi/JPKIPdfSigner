@@ -71,6 +71,7 @@ import com.itextpdf.text.pdf.PdfReader;
 
 
 public class JPKIPdfSignerGUI {
+    public static final String APP_VERSION = "@APP_VERSION@";
     private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("jp.opencollector.application.jpkipdf.messages"); //$NON-NLS-1$
     private static final String[] EXTENSIONS = { "pdf" };
     protected Shell shlJpkiPdfSigner;
@@ -95,6 +96,8 @@ public class JPKIPdfSignerGUI {
      * Open the window.
      */
     public void open() {
+        Display.setAppName(BUNDLE.getString("JPKIPdfSignerGUI.shlJpkiPdfSigner.text"));
+        Display.setAppVersion(APP_VERSION);
         Display display = Display.getDefault();
         createContents();
         shlJpkiPdfSigner.open();
