@@ -458,12 +458,12 @@ exec java -d32 ${dist.bin.mac.args} \
   <outfile>${dist.bin.windows.exe}</outfile>
   <dontWrapJar>true</dontWrapJar>
   <versionInfo>
-    <fileVersion>${project.version}.0.0</fileVersion>
+    <fileVersion>${project.version}.0</fileVersion>
     <txtFileVersion>${project.displayname} ${project.version}</txtFileVersion>
     <fileDescription>${project.displayname}</fileDescription>
     <copyright>${copyright}</copyright>
     <productName>${project.displayname}</productName>
-    <productVersion>${project.version}.0.0</productVersion>
+    <productVersion>${project.version}.0</productVersion>
     <txtProductVersion>${project.displayname} ${project.version}</txtProductVersion>
     <internalName>${project.name}</internalName>
     <originalFilename>${project.name}-${project.version}.exe</originalFilename>
