@@ -50,12 +50,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 import com.itextpdf.text.Chunk;
 import com.itextpdf.text.DocumentException;
@@ -101,6 +104,10 @@ public class JPKIPdfSignatureAppearance {
         GRAPHIC
     }
 
+    private static final ResourceBundle DEFAULT_BUNDLE = ResourceBundle.getBundle(JPKIPdfStamper.class.getPackage().getName() + ".default");
+
+    private static final String BUNDLE_PREFIX = JPKIPdfSignatureAppearance.class.getCanonicalName();
+
     /**
      * The self signed filter.
      */
@@ -129,6 +136,7 @@ public class JPKIPdfSignatureAppearance {
     private String layer2Text;
     private String reason;
     private String location;
+    private String name;
     private Calendar signDate;
     private String provider;
     private int page = 1;
@@ -149,11 +157,13 @@ public class JPKIPdfSignatureAppearance {
     private byte bout[];
     private int boutLen;
     private HashMap<PdfName, PdfLiteral> exclusionLocations;
+    private ResourceBundle bundle;
 
-    JPKIPdfSignatureAppearance(JPKIPdfStamperImp writer) {
+    JPKIPdfSignatureAppearance(JPKIPdfStamperImp writer, ResourceBundle bundle) {
         this.writer = writer;
         signDate = new GregorianCalendar();
         fieldName = getNewSigName();
+        this.bundle = bundle == null ? DEFAULT_BUNDLE: bundle;
     }
 
     private RenderingMode renderingMode = RenderingMode.DESCRIPTION;
@@ -401,13 +411,19 @@ public class JPKIPdfSignatureAppearance {
             String text;
             if (layer2Text == null) {
                 StringBuffer buf = new StringBuffer();
-                buf.append("Digitally signed by ").append(JPKIPdfPKCS7.getSubjectFields(certChain[0]).getField("CN")).append('\n');
+                String name = getName() == null ? JPKIPdfPKCS7.getSubjectFields(certChain[0]).getField("CN"): getName();
+                buf.append(MessageFormat.format(bundle.getString(BUNDLE_PREFIX + ".digitallySignedBy"), name));
+                buf.append('\n');
                 SimpleDateFormat sd = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss z");
-                buf.append("Date: ").append(sd.format(signDate.getTime()));
-                if (reason != null)
-                    buf.append('\n').append("Reason: ").append(reason);
-                if (location != null)
-                    buf.append('\n').append("Location: ").append(location);
+                buf.append(bundle.getString(BUNDLE_PREFIX + ".date")).append(": ").append(sd.format(signDate.getTime()));
+                if (getReason() != null && getReason().length() > 0) {
+                    buf.append('\n');
+                    buf.append(bundle.getString(BUNDLE_PREFIX + ".reason")).append(": ").append(getReason());
+                }
+                if (getLocation() != null && getLocation().length() > 0) {
+                    buf.append('\n');
+                    buf.append(bundle.getString(BUNDLE_PREFIX + ".location")).append(": ").append(getLocation());
+                }
                 text = buf.toString();
             }
             else
@@ -432,7 +448,15 @@ public class JPKIPdfSignatureAppearance {
             }
             Font font;
             if (layer2Font == null)
-                font = new Font();
+                try {
+                    font = new Font(BaseFont.createFont(
+                            bundle.getString(BUNDLE_PREFIX + ".layer2FontName"),
+                            bundle.getString(BUNDLE_PREFIX + ".layer2FontEncoding"),
+                            false
+                            ));
+                } catch (IOException e) {
+                    throw new DocumentException(e);
+                }
             else
                 font = new Font(layer2Font);
             float size = font.getSize();
@@ -674,6 +698,21 @@ public class JPKIPdfSignatureAppearance {
         catch (Exception e) {
             throw new ExceptionConverter(e);
         }
+    }
+
+    /**
+     * Gets the signer name
+     * @return the signer name
+     */
+    public String getName() {
+        return this.name;
+    }
+
+    /**
+     * Sets the signer name
+     */
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
@@ -923,7 +962,10 @@ public class JPKIPdfSignatureAppearance {
                 sigStandard = new JPKIPdfSigGenericPKCS.VeriSign(getProvider());
             else
                 throw new IllegalArgumentException(MessageLocalization.getComposedMessage("unknown.filter.1", getFilter()));
-            sigStandard.put(PdfName.M, new PdfDate(getSignDate()));
+            sigStandard.setDate(new PdfDate(getSignDate()));
+            sigStandard.setReason(getReason());
+            sigStandard.setLocation(getLocation());
+            sigStandard.setName(getName());
             sigStandard.setJPKIWrapper(jpki);
             PdfString contents = (PdfString)sigStandard.get(PdfName.CONTENTS);
             PdfLiteral lit = new PdfLiteral((contents.toString().length() + (PdfName.ADOBE_PPKLITE.equals(getFilter())?0:64)) * 2 + 2);

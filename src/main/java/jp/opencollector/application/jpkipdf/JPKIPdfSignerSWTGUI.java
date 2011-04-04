@@ -229,7 +229,7 @@ public class JPKIPdfSignerSWTGUI {
                                 JPKIWrapper jpki = new JPKIWrapper();
                                 PdfReader reader = new PdfReader(inputFile.getPath());
                                 FileOutputStream fo = new FileOutputStream(outputFile);
-                                JPKIPdfStamper stamper = JPKIPdfStamper.createSignature(reader, fo, '\0');
+                                JPKIPdfStamper stamper = JPKIPdfStamper.createSignature(reader, fo, BUNDLE, '\0');
                                 JPKIPdfSignatureAppearance sa = stamper.getSignatureAppearance();
                                 sa.setCrypto(jpki, JPKIPdfSignatureAppearance.WINCER_SIGNED);
                                 stamper.close();

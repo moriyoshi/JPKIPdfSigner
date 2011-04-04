@@ -39,6 +39,8 @@
 package jp.opencollector.application.jpkipdf;
 import com.itextpdf.text.pdf.PdfReader;
 import java.io.FileOutputStream;
+import java.util.ResourceBundle;
+
 import com.itextpdf.text.pdf.JPKIWrapper;
 import com.itextpdf.text.pdf.JPKIPdfStamper;
 import com.itextpdf.text.pdf.JPKIPdfSignatureAppearance;
@@ -48,7 +50,7 @@ public class JPKIPdfSigner {
         JPKIWrapper jpki = new JPKIWrapper();
         PdfReader reader = new PdfReader(args[0]);
         FileOutputStream fo = new FileOutputStream(args[1]);
-        JPKIPdfStamper stamper = JPKIPdfStamper.createSignature(reader, fo, '\0');
+        JPKIPdfStamper stamper = JPKIPdfStamper.createSignature(reader, fo, ResourceBundle.getBundle(JPKIPdfSigner.class.getPackage().getName() + ".messages"), '\0');
         JPKIPdfSignatureAppearance sa = stamper.getSignatureAppearance();
         sa.setCrypto(jpki, JPKIPdfSignatureAppearance.WINCER_SIGNED);
         stamper.close();

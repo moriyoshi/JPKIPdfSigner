@@ -53,6 +53,7 @@ import java.security.cert.Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import com.itextpdf.text.DocWriter;
 import com.itextpdf.text.DocumentException;
@@ -111,7 +112,7 @@ public class JPKIPdfStamper
      * @throws IOException on error
      */
     public JPKIPdfStamper(PdfReader reader, OutputStream os) throws DocumentException, IOException {
-        stamper = new JPKIPdfStamperImp(reader, os, '\0', false);
+        this.stamper = new JPKIPdfStamperImp(reader, os, '\0', false);
     }
 
     /**
@@ -662,12 +663,12 @@ public class JPKIPdfStamper
      * @throws DocumentException on error
      * @throws IOException on error
      */
-    public static JPKIPdfStamper createSignature(PdfReader reader, OutputStream os, char pdfVersion, File tempFile, boolean append) throws DocumentException, IOException {
+    public static JPKIPdfStamper createSignature(PdfReader reader, OutputStream os, ResourceBundle bundle, char pdfVersion, File tempFile, boolean append) throws DocumentException, IOException {
         JPKIPdfStamper stp;
         if (tempFile == null) {
             ByteBuffer bout = new ByteBuffer();
             stp = new JPKIPdfStamper(reader, bout, pdfVersion, append);
-            stp.sigApp = new JPKIPdfSignatureAppearance(stp.stamper);
+            stp.sigApp = new JPKIPdfSignatureAppearance(stp.stamper, bundle);
             stp.sigApp.setSigout(bout);
         }
         else {
@@ -675,7 +676,7 @@ public class JPKIPdfStamper
                 tempFile = File.createTempFile("pdf", null, tempFile);
             FileOutputStream fout = new FileOutputStream(tempFile);
             stp = new JPKIPdfStamper(reader, fout, pdfVersion, append);
-            stp.sigApp = new JPKIPdfSignatureAppearance(stp.stamper);
+            stp.sigApp = new JPKIPdfSignatureAppearance(stp.stamper, bundle);
             stp.sigApp.setTempFile(tempFile);
         }
         stp.sigApp.setOriginalout(os);
@@ -723,8 +724,8 @@ public class JPKIPdfStamper
      * @throws IOException on error
      * @return a <CODE>PdfStamper</CODE>
      */
-    public static JPKIPdfStamper createSignature(PdfReader reader, OutputStream os, char pdfVersion) throws DocumentException, IOException {
-        return createSignature(reader, os, pdfVersion, null, false);
+    public static JPKIPdfStamper createSignature(PdfReader reader, OutputStream os, ResourceBundle bundle, char pdfVersion) throws DocumentException, IOException {
+        return createSignature(reader, os, bundle, pdfVersion, null, false);
     }
 
     /**
@@ -762,9 +763,9 @@ public class JPKIPdfStamper
      * @throws DocumentException on error
      * @throws IOException on error
      */
-    public static JPKIPdfStamper createSignature(PdfReader reader, OutputStream os, char pdfVersion, File tempFile) throws DocumentException, IOException
+    public static JPKIPdfStamper createSignature(PdfReader reader, OutputStream os, ResourceBundle bundle, char pdfVersion, File tempFile) throws DocumentException, IOException
     {
-        return createSignature(reader, os, pdfVersion, tempFile, false);
+        return createSignature(reader, os, bundle, pdfVersion, tempFile, false);
     }
 
     /**
