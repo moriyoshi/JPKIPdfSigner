@@ -444,6 +444,7 @@ exec java -d32 ${dist.bin.mac.args} \
     <copy todir="${dist.bin.windows.dir}"
           flatten="true">
       <path refid="build.gui.classpath" />
+      <file file="${lib.itextpdf.asian}" />
       <file file="${build.product.gui.jar}" />
     </copy>
     <basename property="lib.itextpdf.name" file="${lib.itextpdf}" />
